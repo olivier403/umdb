@@ -1,0 +1,27 @@
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/umdb?options=-c%20hnsw.ef_search=200
+      - SPRING_DATASOURCE_USERNAME=umdb
+      - SPRING_DATASOURCE_PASSWORD={{ db_password }}
+      - APP_REVIEWS_ENABLED=false
+      - APP_CORS_ALLOWED_ORIGINS=https://{{ domain }}
+      - APP_CORS_ALLOW_CREDENTIALS=true
+    depends_on:
+      - db
+
+  db:
+    image: pgvector/pgvector:pg18-trixie
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - {{ app_dir }}/data:/var/lib/postgresql
+    environment:
+      - POSTGRES_DB=umdb
+      - POSTGRES_USER=umdb
+      - POSTGRES_PASSWORD={{ db_password }}

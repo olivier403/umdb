@@ -1,0 +1,6 @@
+all:
+  hosts:
+    YOUR_SERVER_IP:
+      ansible_user: root
+      domain: your.domain.com
+      db_password: changeme

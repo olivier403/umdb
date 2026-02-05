@@ -1,0 +1,124 @@
+- name: Setup firewall, Docker and Caddy
+  hosts: all
+  vars:
+    app_dir: /opt/umdb
+
+  tasks:
+    - name: Install packages
+      apt:
+        name:
+          - debian-keyring
+          - debian-archive-keyring
+          - apt-transport-https
+          - curl
+          - ufw
+        state: present
+        update_cache: yes
+
+    - name: Configure UFW
+      block:
+        - name: Allow SSH
+          ufw:
+            rule: allow
+            port: "22"
+            proto: tcp
+
+        - name: Allow HTTPS
+          ufw:
+            rule: allow
+            port: "443"
+            proto: tcp
+
+        - name: Allow HTTP (for ACME challenges)
+          ufw:
+            rule: allow
+            port: "80"
+            proto: tcp
+
+        - name: Enable UFW with default deny
+          ufw:
+            state: enabled
+            policy: deny
+            direction: incoming
+      always:
+        - name: Ensure SSH is always allowed
+          ufw:
+            rule: allow
+            port: "22"
+            proto: tcp
+
+    - name: Add Docker GPG key
+      shell: curl -fsSL https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+      args:
+        creates: /usr/share/keyrings/docker-archive-keyring.gpg
+
+    - name: Add Docker repo
+      copy:
+        content: "deb [signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+        dest: /etc/apt/sources.list.d/docker.list
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Add Caddy GPG key
+      shell: curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+      args:
+        creates: /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+
+    - name: Add Caddy repo
+      copy:
+        content: "deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main"
+        dest: /etc/apt/sources.list.d/caddy-stable.list
+
+    - name: Install Caddy
+      apt:
+        name: caddy
+        state: present
+        update_cache: yes
+
+    - name: Create app directories
+      file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - "{{ app_dir }}"
+        - "{{ app_dir }}/frontend"
+        - "{{ app_dir }}/data"
+
+    - name: Create Caddy sites directory
+      file:
+        path: /etc/caddy/sites
+        state: directory
+
+    - name: Create Caddy certs directory
+      file:
+        path: /etc/caddy/certs
+        state: directory
+        owner: caddy
+        group: caddy
+        mode: '0700'
+
+    - name: Copy Caddyfile
+      template:
+        src: templates/Caddyfile.j2
+        dest: /etc/caddy/Caddyfile
+      notify: Reload Caddy
+
+    - name: Copy umdb site config
+      template:
+        src: templates/umdb.caddy.j2
+        dest: /etc/caddy/sites/umdb.caddy
+      notify: Reload Caddy
+
+  handlers:
+    - name: Reload Caddy
+      systemd:
+        name: caddy
+        state: reloaded

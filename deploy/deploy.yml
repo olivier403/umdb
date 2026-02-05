@@ -1,0 +1,45 @@
+- name: Deploy
+  hosts: all
+  vars:
+    app_dir: /opt/umdb
+    project_root: "{{ playbook_dir }}/.."
+
+  tasks:
+    - name: Copy docker-compose.yml
+      template:
+        src: templates/docker-compose.yml.j2
+        dest: "{{ app_dir }}/docker-compose.yml"
+
+    - name: Build frontend locally
+      delegate_to: localhost
+      command: npm run build
+      args:
+        chdir: "{{ project_root }}/frontend"
+      environment:
+        VITE_API_BASE: /api
+
+    - name: Sync frontend
+      synchronize:
+        src: "{{ project_root }}/frontend/dist/"
+        dest: "{{ app_dir }}/frontend/"
+        delete: yes
+
+    - name: Sync backend source
+      synchronize:
+        src: "{{ project_root }}/backend/"
+        dest: "{{ app_dir }}/backend/"
+        delete: yes
+        rsync_opts:
+          - "--exclude=target"
+      register: backend_sync
+
+    - name: Rebuild backend image
+      command: docker compose build backend
+      args:
+        chdir: "{{ app_dir }}"
+      when: backend_sync.changed
+
+    - name: Restart services
+      command: docker compose up -d --force-recreate
+      args:
+        chdir: "{{ app_dir }}"

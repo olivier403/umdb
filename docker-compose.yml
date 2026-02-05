@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  postgres:
+    image: pgvector/pgvector:pg18-trixie
+    environment:
+      POSTGRES_DB: umdb
+      POSTGRES_USER: umdb
+      POSTGRES_PASSWORD: umdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - umdb_pgdata:/var/lib/postgresql/data
+volumes:
+  umdb_pgdata:

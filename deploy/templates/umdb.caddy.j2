@@ -1,0 +1,13 @@
+{{ domain }} {
+    tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+
+    handle /api/* {
+        reverse_proxy localhost:8080
+    }
+
+    handle {
+        root * {{ app_dir }}/frontend
+        try_files {path} /index.html
+        file_server
+    }
+}
