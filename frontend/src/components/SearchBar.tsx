@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { suggestTitles } from '../api'
 import { getPosterUrl } from '../utils/images'
+import HighlightedText from './HighlightedText'
 import type { SuggestionItem } from '../types'
 
 export default function SearchBar() {
@@ -97,7 +98,9 @@ export default function SearchBar() {
                   )}
                 </span>
                 <span className="flex flex-col gap-1">
-                  <span className="text-sm font-semibold text-white">{item.title}</span>
+                  <span className="text-sm font-semibold text-white">
+                    <HighlightedText text={item.title} query={trimmedQuery} />
+                  </span>
                   <span className="text-xs text-muted2">
                     {formatType(item.type)} {item.releaseDate ? `• ${item.releaseDate.slice(0, 4)}` : ''}
                   </span>

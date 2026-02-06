@@ -2,12 +2,14 @@ import { Link } from 'react-router-dom'
 import type { TitleSummary } from '../types'
 import { getPosterUrl } from '../utils/images'
 import StarIcon from './StarIcon'
+import HighlightedText from './HighlightedText'
 
 interface TitleCardProps {
   item: TitleSummary
+  highlightQuery?: string
 }
 
-export default function TitleCard({ item }: TitleCardProps) {
+export default function TitleCard({ item, highlightQuery = '' }: TitleCardProps) {
   const posterUrl = getPosterUrl(item.posterUrl, 'card')
   const releaseYear = item.releaseDate ? item.releaseDate.slice(0, 4) : null
   const trailerType = item.type === 'MOVIE' ? 'movie trailer' : 'tv show trailer'
@@ -37,7 +39,9 @@ export default function TitleCard({ item }: TitleCardProps) {
       </Link>
       <div className="flex flex-1 flex-col gap-2 bg-white/[0.04] px-3 py-3">
         <Link to={`/titles/${item.id}`} className="flex flex-col gap-2">
-          <div className="text-[0.95rem] font-semibold leading-snug text-white">{item.title}</div>
+          <div className="text-[0.95rem] font-semibold leading-snug text-white">
+            <HighlightedText text={item.title} query={highlightQuery} />
+          </div>
           <div className="flex items-center gap-2 text-xs text-muted2 leading-none">
             <span>{item.releaseDate ? item.releaseDate.slice(0, 4) : '—'}</span>
             {hasRating ? (

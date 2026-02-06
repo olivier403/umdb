@@ -251,7 +251,7 @@ export default function BrowsePage({ fixedType }: BrowsePageProps) {
               ) : (
                 <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
                   {results.map((item) => (
-                    <TitleCard key={item.id} item={item} />
+                    <TitleCard key={item.id} item={item} highlightQuery={query} />
                   ))}
                 </div>
               )}
